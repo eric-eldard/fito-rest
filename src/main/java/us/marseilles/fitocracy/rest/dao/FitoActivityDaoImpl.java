@@ -48,6 +48,13 @@ public class FitoActivityDaoImpl implements FitoActivityDao
         
         HttpResponse httpResponse = httpRequest.execute();
         List<String> headerValues = (List<String>) httpResponse.getHeaders().get(FITO_USER_ID_HEADER);
+        
+        if (headerValues == null || headerValues.isEmpty())
+        {
+            throw new IllegalStateException("No " + FITO_USER_ID_HEADER + 
+                " header found; you're probably not logged in.");
+        }
+        
         return headerValues.get(0);
     }
     
@@ -68,7 +75,6 @@ public class FitoActivityDaoImpl implements FitoActivityDao
         HttpRequest httpRequest = createAuthenticatedGetRequest(url, sessionId);
         
         HttpResponse httpResponse = httpRequest.execute();
-
         return httpResponse.parseAs(ActivityHistory.class);
     }
     
