@@ -12,6 +12,7 @@ import com.google.api.client.http.HttpRequest;
 import com.google.api.client.http.HttpRequestFactory;
 import com.google.api.client.http.HttpResponse;
 import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.JsonObjectParser;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.common.reflect.TypeToken;
@@ -58,13 +59,20 @@ public class FitoActivityDaoImpl implements FitoActivityDao
 
     private static final Type V2_WORKOUT_TYPE = new TypeToken<ResponseWrapper<List<Workout>>>() {}.getType();
 
+    /**
+     * Shared, thread-safe JSON factory
+     */
+    private static final JsonFactory JSON_FACTORY = new JacksonFactory();
+
+    /* Instance members */
 
     private final HttpRequestFactory requestFactory;
+
 
     public FitoActivityDaoImpl()
     {
         requestFactory = new NetHttpTransport().createRequestFactory(
-            request -> request.setParser(new JsonObjectParser(new JacksonFactory())));
+            request -> request.setParser(new JsonObjectParser(JSON_FACTORY)));
     }
     
     @Override
