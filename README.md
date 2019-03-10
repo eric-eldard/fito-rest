@@ -19,56 +19,8 @@ and v2) and some page scraping, both for posterity and for playing around with t
 collaborate and see what you do with it!
 
 ## Build
-`mvn clean install`
+`mvn clean package`
 
 ## Use
-Add dependency
-```xml
-<dependency>
-  <groupId>us.marseilles.fitocracy</groupId>
-  <artifactId>fito-rest</artifactId>
-  <version>1.0-SNAPSHOT</version>
-</dependency>
-```
-
-Create a `FitoActivityDao` and start making calls
-```java
-import java.util.List;
-
-import us.marseilles.fitocracy.rest.dao.FitoActivityDao;
-import us.marseilles.fitocracy.rest.dao.FitoActivityDaoImpl;
-import us.marseilles.fitocracy.rest.domain.v1.ActivityStub;
-
-public class Sample
-{
-    public static void main(String[] args)
-    {
-        FitoActivityDao fitoDao = new FitoActivityDaoImpl();
-
-        String sessionId = "{the value of your valid sessionid cookie}";
-        String userId = fitoDao.getOwnUserId(sessionId);
-
-        List<ActivityStub> allStubs = fitoDao.getAllActivitiesForUser(userId, sessionId);
-    }
-}
-
-```
-
-### sessionid
-All requests require a Fitocracy *sessionid*, which can be found in an HttpOnly cookie after logging into the site.
-This cookie is valid for two weeks(!), but the token is invalidated when you log out.  Identifying which user to pull
-data for is accomplished through a bizarre mix of username, this sessionid token, and a user ID.  Calls which don't 
-take a username or user ID use your sessionid to identify who to pull data for, meaning those calls will always be
-limited to your own profile. The user ID is found in the header *X-Fitocracy-User*, which is returned on HTML page
-requests after successful login.  A convenience method to obtain your ID is provided via
-`FitoActivityDao#getOwnUserId(sessionId)`. This currently limits all calls to your own user, but user IDs can be
-scrapped from profile pages (see TODOs).
-
-Fitocracy also provides a CSRF token, but I've yet to encounter a call where it's needed. It's set by a response
-header on HTML page requests into the non-HttpOnly cookie *csrftoken*.
-
-## TODO
-* Scrape other user IDs
-* retrieve and model:
-    * quests (requires scrape)
-    * social data (requires scrape)
+Start with the tools in **fito-client** to retrieve data directly from Fitocracy, then manipulate and record that data
+with **fito-file**.
