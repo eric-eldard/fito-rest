@@ -19,6 +19,8 @@ public interface FitoFileReader
     ActivityHistory readActivityHistory(String path);
 
     /**
+     * Convenience structure for ArrayList<List<ActivityWorkout>>
+     * 
      * Models this structure:
      * - List: All activities
      * -- List: All workout groupings of a single activity

@@ -9,7 +9,7 @@ public class FileSample
 {
     public static void main(String[] args)
     {
-        String source = "/path/to/existing/history/file/fito_activity_history.json";
+        String source = "/path/to/existing/history/file/fito_activities.json";
         String destination = "/path/to/write/history/file";
         
         FitoFileReader fitoJsonReader = new FitoJsonReaderImpl();
