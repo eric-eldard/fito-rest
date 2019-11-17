@@ -12,7 +12,6 @@
 
   
   <modules>
-    <module>fito-backup</module>
     <module>fito-client</module>
     <module>fito-file</module>
     <module>fito-model</module>
