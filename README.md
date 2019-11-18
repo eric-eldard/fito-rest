@@ -1,4 +1,5 @@
 # fito-rest
+[![Build Status](https://travis-ci.org/brazeneric/fito-rest.svg?branch=master)](https://travis-ci.org/brazeneric/fito-rest)
 
 ## About
 [Fitocracy.com](https://www.fitocracy.com) is the first resource to ever help me build and _stick with_ a good workout
