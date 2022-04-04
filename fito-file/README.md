@@ -41,4 +41,5 @@ public class FileSample
 ```
 
 ## TODO
+* Reduce file size by removing redundant data
 * CSV reader/writer

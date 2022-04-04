@@ -8,6 +8,7 @@ import java.util.List;
 
 import com.google.api.client.http.GenericUrl;
 import com.google.api.client.http.HttpHeaders;
+import com.google.api.client.http.HttpMethods;
 import com.google.api.client.http.HttpRequest;
 import com.google.api.client.http.HttpRequestFactory;
 import com.google.api.client.http.HttpResponse;
@@ -79,9 +80,9 @@ public class FitoActivityDaoImpl implements FitoActivityDao
     @SneakyThrows(IOException.class)
     public String getOwnUserId(String sessionId)
     {
-        // Fast-returning call which only requires a sessionId; returns HTTP 200 and null content for activity "-1"
-        GenericUrl url = new GenericUrl(String.format(ACTIVITY_URL_TEMPLATE, -1));
-        HttpRequest httpRequest = createAuthenticatedGetRequest(url, sessionId);
+        // Place a HEAD request to /home, an endpoint that returns the user ID header with only session ID provided
+        String url = HOST + "home";
+        HttpRequest httpRequest = createAuthenticatedHeadRequest(url, sessionId);
         
         HttpResponse httpResponse = httpRequest.execute();
         List<String> headerValues = (List<String>) httpResponse.getHeaders().get(FITO_USER_ID_HEADER);
@@ -98,7 +99,7 @@ public class FitoActivityDaoImpl implements FitoActivityDao
     @SneakyThrows(IOException.class)
     public List<ActivityStub> getAllActivitiesForUser(String userId, String sessionId)
     {
-        GenericUrl url = new GenericUrl(String.format(USER_ACTIVITIES_URL_TEMPLATE, userId));
+        String url = String.format(USER_ACTIVITIES_URL_TEMPLATE, userId);
         HttpRequest httpRequest = createAuthenticatedGetRequest(url, sessionId);
         
         HttpResponse httpResponse = httpRequest.execute();
@@ -109,7 +110,7 @@ public class FitoActivityDaoImpl implements FitoActivityDao
     @SneakyThrows(IOException.class)
     public List<ActivityWorkout> getActivityForUser(long activityId, String sessionId)
     {
-        GenericUrl url = new GenericUrl(String.format(ACTIVITY_URL_TEMPLATE, activityId));
+        String url = String.format(ACTIVITY_URL_TEMPLATE, activityId);
         HttpRequest httpRequest = createAuthenticatedGetRequest(url, sessionId);
         
         HttpResponse httpResponse = httpRequest.execute();
@@ -120,8 +121,7 @@ public class FitoActivityDaoImpl implements FitoActivityDao
     @SneakyThrows(IOException.class)
     public List<ExerciseDescription> getAllExerciseDescriptions(String sessionId)
     {
-        GenericUrl url = new GenericUrl(V2_EXERCISES_URL);
-        HttpRequest httpRequest = createAuthenticatedGetRequest(url, sessionId);
+        HttpRequest httpRequest = createAuthenticatedGetRequest(V2_EXERCISES_URL, sessionId);
 
         HttpResponse httpResponse = httpRequest.execute();
         return ((ResponseWrapper<List<ExerciseDescription>>) httpResponse.parseAs(V2_EXERCISES_TYPE)).getData();
@@ -131,7 +131,7 @@ public class FitoActivityDaoImpl implements FitoActivityDao
     @SneakyThrows(IOException.class)
     public User getUser(String userId, String sessionId)
     {
-        GenericUrl url = new GenericUrl(String.format(V2_USER_URL_TEMPLATE, userId));
+        String url = String.format(V2_USER_URL_TEMPLATE, userId);
         HttpRequest httpRequest = createAuthenticatedGetRequest(url, sessionId);
         
         HttpResponse httpResponse = httpRequest.execute();
@@ -143,16 +143,27 @@ public class FitoActivityDaoImpl implements FitoActivityDao
     public List<Workout> getWorkoutForUser(String userId, Date date, double tzOffset, String sessionId)
     {
         String formattedDate = new SimpleDateFormat("yyyy-MM-dd").format(date);
-        GenericUrl url = new GenericUrl(String.format(V2_WORKOUT_URL_TEMPLATE, userId, formattedDate, tzOffset));
+        String url = String.format(V2_WORKOUT_URL_TEMPLATE, userId, formattedDate, tzOffset);
         HttpRequest httpRequest = createAuthenticatedGetRequest(url, sessionId);
 
         HttpResponse httpResponse = httpRequest.execute();
         return ((ResponseWrapper<List<Workout>>) httpResponse.parseAs(V2_WORKOUT_TYPE)).getData();
     }
 
-    private HttpRequest createAuthenticatedGetRequest(GenericUrl url, String sessionId) throws IOException
+    private HttpRequest createAuthenticatedGetRequest(String url, String sessionId) throws IOException
     {
-        HttpRequest httpRequest = requestFactory.buildGetRequest(url);
+        return createBodilessRequest(HttpMethods.GET, url, sessionId);
+    }
+
+    private HttpRequest createAuthenticatedHeadRequest(String url, String sessionId) throws IOException
+    {
+        return createBodilessRequest(HttpMethods.HEAD, url, sessionId);
+    }
+
+    private HttpRequest createBodilessRequest(String method, String url, String sessionId) throws IOException
+    {
+        GenericUrl genericUrl = new GenericUrl(url);
+        HttpRequest httpRequest = requestFactory.buildRequest(method, genericUrl, null);
         HttpHeaders headers = new HttpHeaders();
         headers.setCookie("sessionid=" + sessionId);
         httpRequest.setHeaders(headers);

@@ -1,5 +1,4 @@
 # fito-rest
-[![Build Status](https://travis-ci.org/brazeneric/fito-rest.svg?branch=master)](https://travis-ci.org/brazeneric/fito-rest)
 
 ## About
 [Fitocracy.com](https://www.fitocracy.com) is the first resource to ever help me build and _stick with_ a good workout
@@ -26,4 +25,4 @@ collaborate and see what you do with it!
 
 ## Use
 Start with the tools in **fito-client** to retrieve data directly from Fitocracy, then manipulate and record that data
-with **fito-file**.  See **fito-sample** for working examples.
+with **fito-file**.  See **fito-backup** and **fito-sample** for working examples.
