@@ -2,10 +2,13 @@ package us.marseilles.fitocracy.sample;
 
 import us.marseilles.fitocracy.file.FitoFileReader;
 import us.marseilles.fitocracy.file.json.FitoJsonReaderImpl;
+import us.marseilles.fitocracy.model.v1.ActivitySet;
 import us.marseilles.fitocracy.model.v1.ActivityWorkout;
 
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
@@ -26,14 +29,15 @@ public class ActivityDatePrinter
         {
             // Print the name of the first activity in group (all activities in the group have same name)
             System.out.println(activity.get(0).getActivitySets().get(0).getActivity().getName());
-            
+
             // Aggregate the dates the activity was logged, collapsing dupes for days it was logged multiple times
             SortedSet<String> activityDates = activity
                 .stream()
-                .flatMap(workout -> workout.getActivitySets()
-                    .stream()
-                    .map(set -> set.getActionDate().toString())
-                )
+                .map(ActivityWorkout::getActivitySets)
+                .flatMap(Collection::stream)
+                .map(ActivitySet::getActionDate)
+                .distinct()
+                .map(Objects::toString)
                 .collect(Collectors.toCollection(TreeSet::new));
 
             Iterator<String> iterator = activityDates.iterator();
