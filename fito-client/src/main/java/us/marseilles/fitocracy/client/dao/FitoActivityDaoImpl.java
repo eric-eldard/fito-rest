@@ -1,12 +1,8 @@
 package us.marseilles.fitocracy.client.dao;
 
-import java.io.IOException;
-import java.lang.reflect.Type;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.List;
-
+import com.google.api.client.http.ByteArrayContent;
 import com.google.api.client.http.GenericUrl;
+import com.google.api.client.http.HttpContent;
 import com.google.api.client.http.HttpHeaders;
 import com.google.api.client.http.HttpMethods;
 import com.google.api.client.http.HttpRequest;
@@ -19,11 +15,20 @@ import com.google.api.client.json.gson.GsonFactory;
 import com.google.common.reflect.TypeToken;
 import lombok.SneakyThrows;
 import us.marseilles.fitocracy.client.model.v2.ResponseWrapper;
+import us.marseilles.fitocracy.client.util.HttpUtils;
+import us.marseilles.fitocracy.model.identity.AuthenticatedUser;
 import us.marseilles.fitocracy.model.v1.ActivityStub;
 import us.marseilles.fitocracy.model.v1.ActivityWorkout;
 import us.marseilles.fitocracy.model.v2.description.ExerciseDescription;
 import us.marseilles.fitocracy.model.v2.user.User;
 import us.marseilles.fitocracy.model.v2.workout.Workout;
+
+import java.io.IOException;
+import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
 
 public class FitoActivityDaoImpl implements FitoActivityDao
 {
@@ -43,9 +48,16 @@ public class FitoActivityDaoImpl implements FitoActivityDao
 
     private static final String V2_WORKOUT_URL_TEMPLATE = V2_USER_URL_TEMPLATE + "workouts/%s/?timezone_offset=%f";
 
-    /* Header constants */
+    /* Request constants */
+
+    private static final String CSRFTOKEN_COOKIE_NAME = "csrftoken";
+
+    private static final String SESSIONID_COOKIE_NAME = "sessionid";
 
     private static final String FITO_USER_ID_HEADER = "X-Fitocracy-User";
+
+    private static final String LOGIN_REQUEST_BODY =
+        "username=%s&password=%s&csrfmiddlewaretoken=%s&is_username=1&json=1";
 
     /* Marshalling types */
 
@@ -75,32 +87,39 @@ public class FitoActivityDaoImpl implements FitoActivityDao
         requestFactory = new NetHttpTransport().createRequestFactory(
             request -> request.setParser(new JsonObjectParser(JSON_FACTORY)));
     }
-    
+
     @Override
     @SneakyThrows(IOException.class)
-    public String getOwnUserId(String sessionId)
+    public AuthenticatedUser authenticate(String username, String password)
     {
-        // Place a HEAD request to /home, an endpoint that returns the user ID header with only session ID provided
-        String url = HOST + "home";
-        HttpRequest httpRequest = createAuthenticatedHeadRequest(url, sessionId);
-        
+        String csrfToken = getCsrfToken();
+
+        String content = String.format(LOGIN_REQUEST_BODY, username, password, csrfToken);
+        byte[] byteContent = content.getBytes(StandardCharsets.UTF_8);
+        HttpContent httpContent = new ByteArrayContent("application/x-www-form-urlencoded", byteContent);
+
+        HttpRequest httpRequest = createRequest(HttpMethods.POST, HOST + "accounts/login", httpContent);
+
+        HttpHeaders requestHeaders = new HttpHeaders();
+        requestHeaders.setAccept("*/*");
+        requestHeaders.setContentType("application/x-www-form-urlencoded");
+        requestHeaders.setCookie(CSRFTOKEN_COOKIE_NAME + '=' + csrfToken);
+        requestHeaders.set("Referer", HOST);
+        httpRequest.setHeaders(requestHeaders);
+
         HttpResponse httpResponse = httpRequest.execute();
-        List<String> headerValues = (List<String>) httpResponse.getHeaders().get(FITO_USER_ID_HEADER);
-        
-        if (headerValues == null || headerValues.isEmpty())
-        {
-            throw new IllegalStateException("No " + FITO_USER_ID_HEADER + 
-                " header found; you're probably not logged in.");
-        }
-        return headerValues.get(0);
+        String userId = HttpUtils.getResponseHeader(httpResponse, FITO_USER_ID_HEADER);
+        String sessionId = HttpUtils.getResponseCookie(httpResponse, SESSIONID_COOKIE_NAME);
+
+        return new AuthenticatedUser(username, userId, sessionId, csrfToken);
     }
     
     @Override
     @SneakyThrows(IOException.class)
-    public List<ActivityStub> getAllActivitiesForUser(String userId, String sessionId)
+    public List<ActivityStub> getAllActivitiesForUser(AuthenticatedUser authenticatedUser)
     {
-        String url = String.format(USER_ACTIVITIES_URL_TEMPLATE, userId);
-        HttpRequest httpRequest = createAuthenticatedGetRequest(url, sessionId);
+        String url = String.format(USER_ACTIVITIES_URL_TEMPLATE, authenticatedUser.getUserId());
+        HttpRequest httpRequest = createAuthenticatedGetRequest(url, authenticatedUser);
         
         HttpResponse httpResponse = httpRequest.execute();
         return (List<ActivityStub>) httpResponse.parseAs(V1_ACTIVITY_STUBS_TYPE);
@@ -108,10 +127,10 @@ public class FitoActivityDaoImpl implements FitoActivityDao
 
     @Override
     @SneakyThrows(IOException.class)
-    public List<ActivityWorkout> getActivityForUser(long activityId, String sessionId)
+    public List<ActivityWorkout> getActivityForUser(long activityId, AuthenticatedUser authenticatedUser)
     {
         String url = String.format(ACTIVITY_URL_TEMPLATE, activityId);
-        HttpRequest httpRequest = createAuthenticatedGetRequest(url, sessionId);
+        HttpRequest httpRequest = createAuthenticatedGetRequest(url, authenticatedUser);
         
         HttpResponse httpResponse = httpRequest.execute();
         return (List<ActivityWorkout>) httpResponse.parseAs(V1_ACTIVITY_WORKOUT_TYPE);
@@ -119,9 +138,9 @@ public class FitoActivityDaoImpl implements FitoActivityDao
 
     @Override
     @SneakyThrows(IOException.class)
-    public List<ExerciseDescription> getAllExerciseDescriptions(String sessionId)
+    public List<ExerciseDescription> getAllExerciseDescriptions(AuthenticatedUser authenticatedUser)
     {
-        HttpRequest httpRequest = createAuthenticatedGetRequest(V2_EXERCISES_URL, sessionId);
+        HttpRequest httpRequest = createAuthenticatedGetRequest(V2_EXERCISES_URL, authenticatedUser);
 
         HttpResponse httpResponse = httpRequest.execute();
         return ((ResponseWrapper<List<ExerciseDescription>>) httpResponse.parseAs(V2_EXERCISES_TYPE)).getData();
@@ -129,10 +148,10 @@ public class FitoActivityDaoImpl implements FitoActivityDao
 
     @Override
     @SneakyThrows(IOException.class)
-    public User getUser(String userId, String sessionId)
+    public User getUser(AuthenticatedUser authenticatedUser)
     {
-        String url = String.format(V2_USER_URL_TEMPLATE, userId);
-        HttpRequest httpRequest = createAuthenticatedGetRequest(url, sessionId);
+        String url = String.format(V2_USER_URL_TEMPLATE, authenticatedUser.getUserId());
+        HttpRequest httpRequest = createAuthenticatedGetRequest(url, authenticatedUser);
         
         HttpResponse httpResponse = httpRequest.execute();
         return ((ResponseWrapper<User>) httpResponse.parseAs(V2_USER_TYPE)).getData();
@@ -140,33 +159,49 @@ public class FitoActivityDaoImpl implements FitoActivityDao
     
     @Override
     @SneakyThrows(IOException.class)
-    public List<Workout> getWorkoutForUser(String userId, Date date, double tzOffset, String sessionId)
+    public List<Workout> getWorkoutForUser(Date date, double tzOffset, AuthenticatedUser authenticatedUser)
     {
         String formattedDate = new SimpleDateFormat("yyyy-MM-dd").format(date);
-        String url = String.format(V2_WORKOUT_URL_TEMPLATE, userId, formattedDate, tzOffset);
-        HttpRequest httpRequest = createAuthenticatedGetRequest(url, sessionId);
+        String url = String.format(V2_WORKOUT_URL_TEMPLATE, authenticatedUser.getUserId(), formattedDate, tzOffset);
+        HttpRequest httpRequest = createAuthenticatedGetRequest(url, authenticatedUser);
 
         HttpResponse httpResponse = httpRequest.execute();
         return ((ResponseWrapper<List<Workout>>) httpResponse.parseAs(V2_WORKOUT_TYPE)).getData();
     }
 
-    private HttpRequest createAuthenticatedGetRequest(String url, String sessionId) throws IOException
+    @SneakyThrows(IOException.class)
+    private String getCsrfToken()
     {
-        return createBodilessRequest(HttpMethods.GET, url, sessionId);
+        HttpRequest httpRequest = createRequest(HttpMethods.HEAD, HOST, null);
+        HttpResponse httpResponse = httpRequest.execute();
+        String csrfToken = HttpUtils.getResponseCookie(httpResponse, CSRFTOKEN_COOKIE_NAME);
+        return csrfToken;
     }
 
-    private HttpRequest createAuthenticatedHeadRequest(String url, String sessionId) throws IOException
+    private HttpRequest createAuthenticatedGetRequest(String url, AuthenticatedUser authenticatedUser)
+        throws IOException
     {
-        return createBodilessRequest(HttpMethods.HEAD, url, sessionId);
+        return createAuthenticatedRequest(HttpMethods.GET, url, authenticatedUser, null);
     }
 
-    private HttpRequest createBodilessRequest(String method, String url, String sessionId) throws IOException
+    private HttpRequest createAuthenticatedRequest(String method, String url, AuthenticatedUser authenticatedUser,
+       HttpContent httpContent) throws IOException
+    {
+        HttpRequest httpRequest = createRequest(method, url, httpContent);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setCookie(
+            SESSIONID_COOKIE_NAME + '=' + authenticatedUser.getSessionId() + ';' +
+            CSRFTOKEN_COOKIE_NAME + '=' + authenticatedUser.getCsrfToken()
+        );
+        // NOTE: csrftoken doesn't seem to be necessary after authentication, but including for future proofing
+        httpRequest.setHeaders(headers);
+        return httpRequest;
+    }
+
+    private HttpRequest createRequest(String method, String url, HttpContent httpContent) throws IOException
     {
         GenericUrl genericUrl = new GenericUrl(url);
-        HttpRequest httpRequest = requestFactory.buildRequest(method, genericUrl, null);
-        HttpHeaders headers = new HttpHeaders();
-        headers.setCookie("sessionid=" + sessionId);
-        httpRequest.setHeaders(headers);
+        HttpRequest httpRequest = requestFactory.buildRequest(method, genericUrl, httpContent);
         return httpRequest;
     }
 }
