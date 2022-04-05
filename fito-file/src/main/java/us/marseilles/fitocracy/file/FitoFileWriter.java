@@ -11,15 +11,16 @@ public interface FitoFileWriter
     
     /**
      * Produce a file from a history of activities.
-     * <p>
+     *
      * File name will conform to the pattern "{destinationDir}/{@link #ACTIVITIES_FILE_NAME}.{extension}"
      * 
-     * @param activitiesHistory a collection of {@link ActivityWorkout}s to write to file
+     * @param activityHistory a collection of {@link ActivityWorkout}s to write to file
      * @param destinationDir the directory to write the file to
+     * @param includeNulls pass <tt>true</tt> to include keys with null values or <tt>false</tt> for smaller file size
      * @param pretty pass <tt>true</tt> for pretty (easier to read) or <tt>false</tt> for compact (smaller file size)
-     * 
+     *
      * @throws java.io.IOException (unchecked) when error converting to JSON or writing file to disk
      */
-    void writeActivitiesHistory(Collection<List<ActivityWorkout>> activitiesHistory, String destinationDir, 
-        boolean pretty);
+    void writeActivityHistory(Collection<List<ActivityWorkout>> activityHistory, String destinationDir,
+                              boolean includeNulls, boolean pretty);
 }

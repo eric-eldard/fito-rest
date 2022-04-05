@@ -15,7 +15,7 @@ import com.google.api.client.http.HttpResponse;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.JsonObjectParser;
-import com.google.api.client.json.jackson2.JacksonFactory;
+import com.google.api.client.json.gson.GsonFactory;
 import com.google.common.reflect.TypeToken;
 import lombok.SneakyThrows;
 import us.marseilles.fitocracy.client.model.v2.ResponseWrapper;
@@ -63,7 +63,7 @@ public class FitoActivityDaoImpl implements FitoActivityDao
     /**
      * Shared, thread-safe JSON factory
      */
-    private static final JsonFactory JSON_FACTORY = new JacksonFactory();
+    private static final JsonFactory JSON_FACTORY = new GsonFactory();
 
     /* Instance members */
 

@@ -29,17 +29,19 @@ public class FileSample
     {
         String source = "/path/to/existing/history/file/fito_activity_history.json";
         String destination = "/path/to/write/history/file";
-        
+
         FitoFileReader fitoJsonReader = new FitoJsonReaderImpl();
         FitoFileWriter fitoJsonWriter = new FitoJsonWriterImpl();
-        
-        FitoFileReader.ActivityHistory activityWorkouts = fitoJsonReader.readActivityHistory(source);
-        fitoJsonWriter.writeActivitiesHistory(activityWorkouts, destination, true);
+
+        FitoFileReader.ActivityHistory activityHistory = fitoJsonReader.readActivityHistory(source);
+        fitoJsonWriter.writeActivityHistory(activityHistory, destination, false, true);
     }
 }
 
 ```
 
 ## TODO
-* Reduce file size by removing redundant data
+* further reduce file size:
+** add model-aware JSON field exclusion
+** remove redundant data
 * CSV reader/writer

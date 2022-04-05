@@ -1,30 +1,30 @@
 package us.marseilles.fitocracy.file.json;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.util.List;
-
-import com.google.api.client.json.JsonFactory;
-import com.google.api.client.json.jackson2.JacksonFactory;
+import com.google.gson.Gson;
 import lombok.SneakyThrows;
 import us.marseilles.fitocracy.file.FitoFileReader;
+
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
 
 /**
  * Reads JSON files into fito-model entities
  */
 public class FitoJsonReaderImpl implements FitoFileReader
 {
-    private JsonFactory jsonFactory = new JacksonFactory();
-    
     @Override
     @SneakyThrows(IOException.class)
     public ActivityHistory readActivityHistory(String path)
     {
-        List activityWorkouts;
+        ActivityHistory activityHistory;
+        Gson gson = new Gson();
         try (FileInputStream inStream = new FileInputStream(path))
         {
-            activityWorkouts = jsonFactory.fromInputStream(inStream, ActivityHistory.class);
+            BufferedReader reader = new BufferedReader(new InputStreamReader(inStream));
+            activityHistory = gson.fromJson(reader, ActivityHistory.class);
         }
-        return (ActivityHistory) activityWorkouts;
+        return activityHistory;
     }
 }

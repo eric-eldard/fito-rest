@@ -5,8 +5,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 
-import com.google.api.client.json.JsonFactory;
-import com.google.api.client.json.jackson2.JacksonFactory;
+import com.google.gson.GsonBuilder;
 import lombok.SneakyThrows;
 import us.marseilles.fitocracy.file.FitoFileWriter;
 import us.marseilles.fitocracy.file.util.FileUtil;
@@ -17,16 +16,17 @@ import us.marseilles.fitocracy.model.v1.ActivityWorkout;
  */
 public class FitoJsonWriterImpl implements FitoFileWriter
 {
-    private JsonFactory jsonFactory = new JacksonFactory();
-
     @Override
     @SneakyThrows(IOException.class)
-    public void writeActivitiesHistory(Collection<List<ActivityWorkout>> activitiesHistory, String destinationDir, 
-        boolean pretty)
+    public void writeActivityHistory(Collection<List<ActivityWorkout>> activityHistory, String destinationDir,
+                                     boolean includeNulls, boolean pretty)
     {
-        String json = pretty ?
-            jsonFactory.toPrettyString(activitiesHistory) :
-            jsonFactory.toString(activitiesHistory);
+        GsonBuilder gsonBuilder = new GsonBuilder();
+
+        if (includeNulls) { gsonBuilder.serializeNulls(); }
+        if (pretty) { gsonBuilder.setPrettyPrinting(); }
+
+        String json = gsonBuilder.create().toJson(activityHistory);
 
         boolean destDirEndsInSlash = destinationDir.endsWith(File.separator);
         String fileName = destinationDir + (destDirEndsInSlash ? "" : File.separator) + ACTIVITIES_FILE_NAME +  ".json";

@@ -15,10 +15,10 @@
   
   
   <dependencies>
-    
+
     <dependency>
-      <groupId>com.google.http-client</groupId>
-      <artifactId>google-http-client-jackson2</artifactId>
+      <groupId>com.google.api-client</groupId>
+      <artifactId>google-api-client-gson</artifactId>
     </dependency>
 
     <dependency>

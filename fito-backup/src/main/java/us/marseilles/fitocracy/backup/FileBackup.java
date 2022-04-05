@@ -7,6 +7,7 @@ import java.util.TreeMap;
 import us.marseilles.fitocracy.client.dao.FitoActivityDao;
 import us.marseilles.fitocracy.client.dao.FitoActivityDaoImpl;
 import us.marseilles.fitocracy.file.json.FitoJsonWriterImpl;
+import us.marseilles.fitocracy.model.ModelUtils;
 import us.marseilles.fitocracy.model.v1.ActivityStub;
 import us.marseilles.fitocracy.model.v1.ActivityWorkout;
 
@@ -38,7 +39,9 @@ public class FileBackup
             allActivities.put(stub.getName(), activityHistory);
         }
 
-        // Write file to disk
-        new FitoJsonWriterImpl().writeActivitiesHistory(allActivities.values(), destination, true);
+        ModelUtils.nullOutBlanksAndZeros(allActivities);
+
+        // Write file to disk; exclude keys with null values
+        new FitoJsonWriterImpl().writeActivityHistory(allActivities.values(), destination, false, true);
     }
 }
