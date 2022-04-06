@@ -1,15 +1,17 @@
 package us.marseilles.fitocracy.client.util;
 
 import com.google.api.client.http.HttpResponse;
+import lombok.experimental.UtilityClass;
 
 import java.util.List;
 
-public final class HttpUtils
+@UtilityClass
+public class HttpUtils
 {
     /**
      * Find first or throw exception
      */
-    public static String getResponseHeader(HttpResponse httpResponse, String headerName)
+    public String getResponseHeader(HttpResponse httpResponse, String headerName)
     {
         List<String> headerValues = (List<String>) httpResponse.getHeaders().get(headerName);
         String headerValue = null;
@@ -32,7 +34,7 @@ public final class HttpUtils
     /**
      * Find first or throw exception
      */
-    public static String getResponseCookie(HttpResponse httpResponse, String cookieName)
+    public String getResponseCookie(HttpResponse httpResponse, String cookieName)
     {
         List<String> cookies = (List<String>) httpResponse.getHeaders().get("Set-Cookie");
         String cookie = null;
@@ -53,6 +55,4 @@ public final class HttpUtils
         String cookieValue = cookie.substring(cookieName.length() + 1, cookie.indexOf(';'));
         return cookieValue;
     }
-
-    private HttpUtils() { }
 }

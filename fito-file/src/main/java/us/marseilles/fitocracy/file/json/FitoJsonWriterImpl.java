@@ -8,7 +8,7 @@ import java.util.List;
 import com.google.gson.GsonBuilder;
 import lombok.SneakyThrows;
 import us.marseilles.fitocracy.file.FitoFileWriter;
-import us.marseilles.fitocracy.file.util.FileUtil;
+import us.marseilles.fitocracy.file.util.FileUtils;
 import us.marseilles.fitocracy.model.v1.ActivityWorkout;
 
 /**
@@ -30,6 +30,6 @@ public class FitoJsonWriterImpl implements FitoFileWriter
 
         boolean destDirEndsInSlash = destinationDir.endsWith(File.separator);
         String fileName = destinationDir + (destDirEndsInSlash ? "" : File.separator) + ACTIVITIES_FILE_NAME +  ".json";
-        FileUtil.writeToFile(fileName, json);
+        FileUtils.writeToFile(fileName, json);
     }
 }

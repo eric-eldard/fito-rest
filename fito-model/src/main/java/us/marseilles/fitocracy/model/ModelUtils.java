@@ -1,10 +1,12 @@
 package us.marseilles.fitocracy.model;
 
 import lombok.SneakyThrows;
+import lombok.experimental.UtilityClass;
 
 import java.lang.reflect.Field;
 import java.util.Map;
 
+@UtilityClass
 public final class ModelUtils
 {
     /**
@@ -19,7 +21,7 @@ public final class ModelUtils
      * - If the field is a String and it's blank, null it out
      */
     @SneakyThrows(IllegalAccessException.class)
-    public static void nullOutBlanksAndZeros(Object obj)
+    public void nullOutBlanksAndZeros(Object obj)
     {
         if (obj instanceof Iterable<?> iterable)
         {
@@ -59,12 +61,8 @@ public final class ModelUtils
     /**
      * @return <tt>true</tt> if the object's class belongs to fito-model; always returns <tt>false</tt> for null input
      */
-    public static boolean isFitoModelType(Object obj)
+    public boolean isFitoModelType(Object obj)
     {
         return obj != null && obj.getClass().getPackageName().startsWith(ModelUtils.class.getPackageName());
-    }
-
-    private ModelUtils()
-    {
     }
 }
